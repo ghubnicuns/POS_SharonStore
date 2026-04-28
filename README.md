@@ -1,2 +1,2 @@
-# POSSharonStore
+# POS_SharonStore
 Capstone
