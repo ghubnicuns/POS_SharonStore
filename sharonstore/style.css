@@ -1,0 +1,13 @@
+body { background-color: #f8f9fa; }
+.pos-container { height: 100vh; overflow: hidden; }
+.cart-section { background-color: #ffffff; border-left: 2px solid #dee2e6; }
+.product-scroll-area { height: calc(100vh - 180px); overflow-y: auto; overflow-x: hidden; padding-right: 10px; }
+.product-card { cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; border: 2px solid transparent; }
+.product-card:hover { transform: translateY(-3px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-color: #198754; }
+.cart-scroll-area { height: calc(100vh - 250px); overflow-y: auto; }
+.qty-btn { width: 30px; height: 30px; padding: 0; font-weight: bold; }
+.remove-btn { width: 30px; height: 30px; padding: 0; font-weight: bold; line-height: 1; }
+.qty-input { width: 45px; text-align: center; font-weight: bold; padding: 2px 5px; margin: 0 5px; }
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.qty-input[type=number] { -moz-appearance: textfield; }
