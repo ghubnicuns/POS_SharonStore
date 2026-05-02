@@ -7,7 +7,183 @@
     <meta name="description" content="Create your Sharon Store management account to get started.">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --pink:       #198754;
+            --pink-light: #20c997;
+            --pink-dark:  #146c43;
+            --purple:     #0d6efd;
+            --bg:         #f0f2f5;
+            --surface:    rgba(255,255,255,0.85);
+            --border:     rgba(0,0,0,0.12);
+            --text:       #212529;
+            --muted:      #6c757d;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: auto;
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .bg-orb { position: fixed; border-radius: 50%; filter: blur(80px); opacity: 0.35; pointer-events: none; animation: floatOrb 8s ease-in-out infinite alternate; }
+        .orb1 { width: 500px; height: 500px; background: #20c997; top: -150px; left: -150px; animation-delay: 0s; }
+        .orb2 { width: 400px; height: 400px; background: #0d6efd; bottom: -120px; right: -120px; animation-delay: 2s; }
+        .orb3 { width: 300px; height: 300px; background: #198754; top: 50%; left: 50%; transform: translate(-50%,-50%); animation-delay: 4s; opacity: 0.10; }
+
+        @keyframes floatOrb { from { transform: scale(1) translate(0,0); } to { transform: scale(1.15) translate(20px, -20px); } }
+
+        .auth-card {
+            position: relative; z-index: 10;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 48px 44px;
+            width: 100%; max-width: 480px;
+            box-shadow: 0 32px 80px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.9);
+            animation: cardIn 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+        }
+
+        @keyframes cardIn { from { opacity: 0; transform: translateY(40px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+        .logo-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
+        .logo-icon { width: 48px; height: 48px; background: linear-gradient(135deg, var(--pink), var(--purple)); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 8px 24px rgba(25,135,84,0.35); }
+        .logo-name { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
+        .logo-name span { color: var(--pink-light); }
+
+        .auth-heading { font-size: 26px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+        .auth-sub { font-size: 14px; color: var(--muted); margin-bottom: 28px; }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+        .form-group { margin-bottom: 18px; position: relative; }
+        .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; letter-spacing: 0.3px; transition: color 0.2s; }
+        .form-group:focus-within .form-label { color: var(--pink); }
+        .input-wrap { position: relative; }
+        .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 15px; pointer-events: none; transition: all 0.2s; }
+        .form-group:focus-within .input-icon { color: var(--pink); }
+        .form-control {
+            width: 100%; padding: 13px 14px 13px 40px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 12px; color: var(--text); font-size: 14px;
+            font-family: 'Inter', sans-serif; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); outline: none;
+        }
+        .form-control::placeholder { color: #adb5bd; transition: color 0.2s; }
+        .form-control:focus { border-color: var(--pink); box-shadow: 0 0 0 3px rgba(25,135,84,0.18); background: #fff; transform: translateY(-1px); }
+        .form-control:hover:not(:focus) { border-color: #c3e6cb; background: #fbfcfd; }
+        .form-control.valid { border-color: var(--pink); box-shadow: 0 0 0 3px rgba(25,135,84,0.15); }
+        .form-control.invalid { border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,0.15); }
+        
+        .form-help-text {
+            font-size: 12px; color: #dc2626; margin-top: 6px; display: none; animation: slideInDown 0.2s ease-out;
+        }
+        .form-group.has-error .form-help-text { display: block; }
+
+        @keyframes slideInDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .toggle-pw { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); cursor: pointer; font-size: 15px; padding: 0; line-height: 1; transition: color 0.2s; }
+        .toggle-pw:hover { color: var(--pink-light); }
+
+        /* Password strength indicator */
+        .password-strength {
+            margin-top: 10px; display: none; gap: 4px;
+        }
+        .strength-bar { flex: 1; height: 3px; background: #e5e7eb; border-radius: 2px; overflow: hidden; }
+        .strength-fill { height: 100%; width: 0%; transition: width 0.3s ease, background-color 0.3s ease; }
+        .strength-label { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; }
+
+        /* Terms */
+        .terms-group { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 20px; }
+        .terms-group input { margin-top: 2px; accent-color: var(--pink); min-width: 15px; height: 15px; cursor: pointer; transition: transform 0.2s; }
+        .terms-group input:checked { transform: scale(1.1); }
+        .terms-text { font-size: 13px; color: var(--muted); line-height: 1.5; }
+        .terms-text a { color: var(--pink-light); text-decoration: none; transition: color 0.2s; }
+        .terms-text a:hover { color: var(--pink); }
+
+        .btn-primary { 
+            width: 100%; padding: 14px;
+            background: linear-gradient(135deg, var(--pink), var(--purple));
+            border: none; border-radius: 12px;
+            color: #fff; font-size: 15px; font-weight: 700;
+            cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 24px rgba(25,135,84,0.35);
+            font-family: 'Inter', sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.1);
+            transition: left 0.4s ease;
+        }
+        .btn-primary:hover::before { left: 100%; }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(25,135,84,0.45); }
+        .btn-primary:active { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(25,135,84,0.35); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .divider { display: flex; align-items: center; gap: 12px; margin: 22px 0; transition: opacity 0.2s; }
+        .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); transition: background 0.2s; }
+        .divider span { font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+        .auth-footer { text-align: center; font-size: 14px; color: var(--muted); }
+        .auth-footer a { color: var(--pink-light); font-weight: 600; text-decoration: none; transition: all 0.2s; position: relative; }
+        .auth-footer a::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: var(--pink-light); transition: width 0.2s; }
+        .auth-footer a:hover::after { width: 100%; }
+        .auth-footer a:hover { color: var(--pink); }
+
+        .alert-success { 
+            background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.3);
+            border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #86efac;
+            margin-bottom: 18px; display: none; align-items: center; gap: 8px;
+            animation: slideDown 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .alert-success.show { display: flex; }
+        
+        .alert-error { 
+            background: rgba(220,38,38,0.15); border: 1px solid rgba(220,38,38,0.35);
+            border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #fca5a5;
+            margin-bottom: 18px; display: none; align-items: center; gap: 8px;
+            animation: slideDown 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .alert-error.show { display: flex; }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .spinner { display: none; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .btn-primary.loading .btn-text { display: none; }
+        .btn-primary.loading .spinner { display: inline-block; }
+
+        /* Improved focus visible state for accessibility */
+        .form-control:focus-visible {
+            outline: 2px solid var(--pink);
+            outline-offset: 2px;
+        }
+
+        @media (max-width: 480px) { 
+            .form-row { grid-template-columns: 1fr; } 
+            .auth-card { padding: 32px 24px; } 
+        }
+    </style>
 </head>
 <body>
     <div class="bg-orb orb1"></div>
@@ -74,7 +250,7 @@
                 <label class="form-label" for="signupRole">Role</label>
                 <div class="input-wrap">
                     <i class="input-icon fa fa-shield-halved"></i>
-                    <select id="signupRole" class="form-control select-with-icon">
+                    <select id="signupRole" class="form-control" style="padding-left:38px; cursor:pointer;">
                         <option value="Staff">Staff</option>
                         <option value="Manager">Manager</option>
                         <option value="Admin">Admin</option>
@@ -92,7 +268,7 @@
                     </button>
                 </div>
                 <div class="password-strength" id="passwordStrength">
-                    <div class="progress-bars">
+                    <div style="flex: 1; display: flex; gap: 4px;">
                         <div class="strength-bar"><div class="strength-fill" id="strengthFill1"></div></div>
                         <div class="strength-bar"><div class="strength-fill" id="strengthFill2"></div></div>
                         <div class="strength-bar"><div class="strength-fill" id="strengthFill3"></div></div>

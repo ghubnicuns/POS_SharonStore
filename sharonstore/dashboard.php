@@ -8,7 +8,7 @@
     <meta name="theme-color" content="#198754">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="app.css">
 </head>
 <body>
     <!-- Sidebar -->
@@ -63,28 +63,28 @@
 
             <!-- Stats cards -->
             <div class="stats-grid">
-                <div class="stat-card accent-pink">
+                <div class="stat-card" style="--accent:#e91e8c">
                     <div class="stat-icon"><i class="fa fa-peso-sign"></i></div>
                     <div class="stat-info">
                         <div class="stat-value" id="statRevenue">₱0.00</div>
                         <div class="stat-label">Total Revenue (Today)</div>
                     </div>
                 </div>
-                <div class="stat-card accent-purple">
+                <div class="stat-card" style="--accent:#7c3aed">
                     <div class="stat-icon"><i class="fa fa-receipt"></i></div>
                     <div class="stat-info">
                         <div class="stat-value" id="statTransactions">0</div>
                         <div class="stat-label">Transactions Today</div>
                     </div>
                 </div>
-                <div class="stat-card accent-blue">
+                <div class="stat-card" style="--accent:#0ea5e9">
                     <div class="stat-icon"><i class="fa fa-boxes-stacked"></i></div>
                     <div class="stat-info">
                         <div class="stat-value" id="statProducts">0</div>
                         <div class="stat-label">Total Products</div>
                     </div>
                 </div>
-                <div class="stat-card accent-amber">
+                <div class="stat-card" style="--accent:#f59e0b">
                     <div class="stat-icon"><i class="fa fa-triangle-exclamation"></i></div>
                     <div class="stat-info">
                         <div class="stat-value" id="statLowStock">0</div>
@@ -101,7 +101,7 @@
                         <a href="pos.php" class="dash-link">Go to POS →</a>
                     </div>
                     <div id="recentTransactions" class="empty-state">
-                        <i class="fa fa-clock-rotate-left fa-2x stat-icon"></i>
+                        <i class="fa fa-clock-rotate-left fa-2x" style="color:var(--muted); margin-bottom:8px;"></i>
                         <p>No transactions yet today</p>
                     </div>
                 </div>
@@ -143,7 +143,7 @@
         // Low stock list
         const lowStockEl = document.getElementById('lowStockList');
         if (lowStock.length === 0) {
-            lowStockEl.innerHTML = '<div class="empty-state"><i class="fa fa-circle-check fa-2x"></i><p>All items are well stocked!</p></div>';
+            lowStockEl.innerHTML = '<div class="empty-state"><i class="fa fa-circle-check fa-2x" style="color:#22c55e;margin-bottom:8px;"></i><p>All items are well stocked!</p></div>';
         } else {
             lowStockEl.innerHTML = lowStock.map(item => `
                 <div class="low-stock-row">
