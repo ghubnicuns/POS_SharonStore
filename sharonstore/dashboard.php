@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5, user-scalable=yes">
     <title>Dashboard – Sharon Store</title>
     <meta name="description" content="Sharon Store management dashboard – overview of sales, inventory, and key metrics.">
+    <meta name="theme-color" content="#198754">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="app.css">
@@ -170,6 +171,37 @@
         }
 
         document.getElementById('topbarDate').textContent = new Date().toLocaleDateString('en-PH', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+        // Close sidebar when navigating on mobile
+        document.querySelectorAll('.nav-item').forEach(link => {
+            link.addEventListener('click', () => {
+                const sidebar = document.getElementById('sidebar');
+                if (window.innerWidth < 768) {
+                    sidebar.classList.remove('open');
+                }
+            });
+        });
+
+        // Prevent body scroll when sidebar is open on mobile
+        const sidebar = document.getElementById('sidebar');
+        const observeSidebar = new MutationObserver(() => {
+            if (sidebar.classList.contains('open')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
+        });
+        observeSidebar.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
+
+        // Improve touch responsiveness
+        document.addEventListener('touchstart', (e) => {
+            if (window.innerWidth < 768 && !sidebar.contains(e.target)) {
+                const menuToggle = document.getElementById('menuToggle');
+                if (!menuToggle.contains(e.target)) {
+                    sidebar.classList.remove('open');
+                }
+            }
+        }, false);
     </script>
 </body>
 </html>
