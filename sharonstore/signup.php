@@ -1,3 +1,47 @@
+<?php
+session_start();
+require 'db_connect.php';
+
+// If they are already logged in, send them straight to the dashboard
+if (isset($_SESSION['UserID'])) {
+    header("Location: dashboard.php");
+    exit();
+}
+
+$error_message = '';
+$success_message = '';
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $username = trim($_POST['username']);
+    $password = $_POST['password'];
+    $confirm = $_POST['confirmPassword'];
+    $role = $_POST['role']; // Now strictly 'Admin' or 'Cashier' from the UI
+
+    if (empty($username) || empty($password)) {
+        $error_message = 'Please fill out all required fields.';
+    } elseif ($password !== $confirm) {
+        $error_message = 'Passwords do not match.';
+    } else {
+        // Check if username already exists in the database
+        $stmt = $pdo->prepare("SELECT * FROM tbl_users WHERE Username = ?");
+        $stmt->execute([$username]);
+        if ($stmt->fetch()) {
+            $error_message = 'Username is already taken. Please choose another.';
+        } else {
+            // Hash the password for security
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            
+            // Insert into database
+            $insert_stmt = $pdo->prepare("INSERT INTO tbl_users (Username, Password, Role) VALUES (?, ?, ?)");
+            if ($insert_stmt->execute([$username, $hashed_password, $role])) {
+                $success_message = 'Account created successfully! Redirecting to login...';
+            } else {
+                $error_message = 'Failed to create account. Please try again.';
+            }
+        }
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,7 +53,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
         :root {
             --pink:       #198754;
             --pink-light: #20c997;
@@ -21,7 +64,6 @@
             --text:       #212529;
             --muted:      #6c757d;
         }
-
         body {
             font-family: 'Inter', sans-serif;
             background: var(--bg);
@@ -33,14 +75,11 @@
             position: relative;
             padding: 20px 0;
         }
-
         .bg-orb { position: fixed; border-radius: 50%; filter: blur(80px); opacity: 0.35; pointer-events: none; animation: floatOrb 8s ease-in-out infinite alternate; }
         .orb1 { width: 500px; height: 500px; background: #20c997; top: -150px; left: -150px; animation-delay: 0s; }
         .orb2 { width: 400px; height: 400px; background: #0d6efd; bottom: -120px; right: -120px; animation-delay: 2s; }
         .orb3 { width: 300px; height: 300px; background: #198754; top: 50%; left: 50%; transform: translate(-50%,-50%); animation-delay: 4s; opacity: 0.10; }
-
         @keyframes floatOrb { from { transform: scale(1) translate(0,0); } to { transform: scale(1.15) translate(20px, -20px); } }
-
         .auth-card {
             position: relative; z-index: 10;
             background: rgba(255,255,255,0.92);
@@ -53,19 +92,14 @@
             box-shadow: 0 32px 80px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.9);
             animation: cardIn 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
         }
-
         @keyframes cardIn { from { opacity: 0; transform: translateY(40px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
-
         .logo-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
         .logo-icon { width: 48px; height: 48px; background: linear-gradient(135deg, var(--pink), var(--purple)); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 8px 24px rgba(25,135,84,0.35); }
         .logo-name { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
         .logo-name span { color: var(--pink-light); }
-
         .auth-heading { font-size: 26px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
         .auth-sub { font-size: 14px; color: var(--muted); margin-bottom: 28px; }
-
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-
         .form-group { margin-bottom: 18px; position: relative; }
         .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; letter-spacing: 0.3px; transition: color 0.2s; }
         .form-group:focus-within .form-label { color: var(--pink); }
@@ -89,15 +123,12 @@
             font-size: 12px; color: #dc2626; margin-top: 6px; display: none; animation: slideInDown 0.2s ease-out;
         }
         .form-group.has-error .form-help-text { display: block; }
-
         @keyframes slideInDown {
             from { opacity: 0; transform: translateY(-8px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
         .toggle-pw { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); cursor: pointer; font-size: 15px; padding: 0; line-height: 1; transition: color 0.2s; }
         .toggle-pw:hover { color: var(--pink-light); }
-
         /* Password strength indicator */
         .password-strength {
             margin-top: 10px; display: none; gap: 4px;
@@ -105,7 +136,6 @@
         .strength-bar { flex: 1; height: 3px; background: #e5e7eb; border-radius: 2px; overflow: hidden; }
         .strength-fill { height: 100%; width: 0%; transition: width 0.3s ease, background-color 0.3s ease; }
         .strength-label { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; }
-
         /* Terms */
         .terms-group { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 20px; }
         .terms-group input { margin-top: 2px; accent-color: var(--pink); min-width: 15px; height: 15px; cursor: pointer; transition: transform 0.2s; }
@@ -113,7 +143,6 @@
         .terms-text { font-size: 13px; color: var(--muted); line-height: 1.5; }
         .terms-text a { color: var(--pink-light); text-decoration: none; transition: color 0.2s; }
         .terms-text a:hover { color: var(--pink); }
-
         .btn-primary { 
             width: 100%; padding: 14px;
             background: linear-gradient(135deg, var(--pink), var(--purple));
@@ -136,20 +165,17 @@
         .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(25,135,84,0.45); }
         .btn-primary:active { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(25,135,84,0.35); }
         .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-
         .divider { display: flex; align-items: center; gap: 12px; margin: 22px 0; transition: opacity 0.2s; }
         .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); transition: background 0.2s; }
         .divider span { font-size: 12px; color: var(--muted); white-space: nowrap; }
-
         .auth-footer { text-align: center; font-size: 14px; color: var(--muted); }
         .auth-footer a { color: var(--pink-light); font-weight: 600; text-decoration: none; transition: all 0.2s; position: relative; }
         .auth-footer a::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: var(--pink-light); transition: width 0.2s; }
         .auth-footer a:hover::after { width: 100%; }
         .auth-footer a:hover { color: var(--pink); }
-
         .alert-success { 
             background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.3);
-            border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #86efac;
+            border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #198754;
             margin-bottom: 18px; display: none; align-items: center; gap: 8px;
             animation: slideDown 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
@@ -157,28 +183,24 @@
         
         .alert-error { 
             background: rgba(220,38,38,0.15); border: 1px solid rgba(220,38,38,0.35);
-            border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #fca5a5;
+            border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #dc2626;
             margin-bottom: 18px; display: none; align-items: center; gap: 8px;
             animation: slideDown 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .alert-error.show { display: flex; }
-
         @keyframes slideDown {
             from { opacity: 0; transform: translateY(-12px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
         .spinner { display: none; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .btn-primary.loading .btn-text { display: none; }
         .btn-primary.loading .spinner { display: inline-block; }
-
         /* Improved focus visible state for accessibility */
         .form-control:focus-visible {
             outline: 2px solid var(--pink);
             outline-offset: 2px;
         }
-
         @media (max-width: 480px) { 
             .form-row { grid-template-columns: 1fr; } 
             .auth-card { padding: 32px 24px; } 
@@ -189,32 +211,32 @@
     <div class="bg-orb orb1"></div>
     <div class="bg-orb orb2"></div>
     <div class="bg-orb orb3"></div>
-
     <div class="auth-card">
         <div class="logo-wrap">
             <div class="logo-icon">🛒</div>
             <div class="logo-name">Sharon<span>Store</span></div>
         </div>
-
         <h1 class="auth-heading">Create your account ✨</h1>
         <p class="auth-sub">Join Sharon Store management system today</p>
-
-        <div class="alert-success" id="successAlert">
+        
+        <!-- PHP Output Alerts -->
+        <div class="alert-success <?php echo !empty($success_message) ? 'show' : ''; ?>" id="successAlert">
             <i class="fa fa-circle-check"></i>
-            <span>Account created! Redirecting to login…</span>
+            <span><?php echo htmlspecialchars($success_message); ?></span>
         </div>
-        <div class="alert-error" id="errorAlert">
+        <div class="alert-error <?php echo !empty($error_message) ? 'show' : ''; ?>" id="errorAlert">
             <i class="fa fa-circle-exclamation"></i>
-            <span id="errorMsg">Something went wrong. Please try again.</span>
+            <span id="errorMsg"><?php echo htmlspecialchars($error_message); ?></span>
         </div>
 
-        <form id="signupForm" novalidate>
+        <!-- Update Form to natively POST to PHP -->
+        <form id="signupForm" method="POST" action="signup.php">
             <div class="form-row">
                 <div class="form-group" id="firstNameGroup">
                     <label class="form-label" for="firstName">First Name</label>
                     <div class="input-wrap">
                         <i class="input-icon fa fa-user"></i>
-                        <input type="text" id="firstName" class="form-control" placeholder="Sharon" required>
+                        <input type="text" name="firstName" id="firstName" class="form-control" placeholder="Sharon" required>
                     </div>
                     <div class="form-help-text" id="firstNameHelp"></div>
                 </div>
@@ -222,47 +244,43 @@
                     <label class="form-label" for="lastName">Last Name</label>
                     <div class="input-wrap">
                         <i class="input-icon fa fa-user"></i>
-                        <input type="text" id="lastName" class="form-control" placeholder="Dela Cruz" required>
+                        <input type="text" name="lastName" id="lastName" class="form-control" placeholder="Dela Cruz" required>
                     </div>
                     <div class="form-help-text" id="lastNameHelp"></div>
                 </div>
             </div>
-
             <div class="form-group" id="usernameGroup">
                 <label class="form-label" for="signupUsername">Username</label>
                 <div class="input-wrap">
                     <i class="input-icon fa fa-at"></i>
-                    <input type="text" id="signupUsername" class="form-control" placeholder="Choose a username" required autocomplete="off">
+                    <input type="text" name="username" id="signupUsername" class="form-control" placeholder="Choose a username" required autocomplete="off">
                 </div>
                 <div class="form-help-text" id="usernameHelp"></div>
             </div>
-
             <div class="form-group" id="emailGroup">
                 <label class="form-label" for="signupEmail">Email Address</label>
                 <div class="input-wrap">
                     <i class="input-icon fa fa-envelope"></i>
-                    <input type="email" id="signupEmail" class="form-control" placeholder="you@email.com" required>
+                    <input type="email" name="email" id="signupEmail" class="form-control" placeholder="you@email.com" required>
                 </div>
                 <div class="form-help-text" id="emailHelp"></div>
             </div>
-
             <div class="form-group" id="roleGroup">
                 <label class="form-label" for="signupRole">Role</label>
                 <div class="input-wrap">
                     <i class="input-icon fa fa-shield-halved"></i>
-                    <select id="signupRole" class="form-control" style="padding-left:38px; cursor:pointer;">
-                        <option value="Staff">Staff</option>
-                        <option value="Manager">Manager</option>
+                    <!-- Simplified to only match the Database Schema (Admin & Cashier) -->
+                    <select name="role" id="signupRole" class="form-control" style="padding-left:38px; cursor:pointer;">
+                        <option value="Cashier">Cashier</option>
                         <option value="Admin">Admin</option>
                     </select>
                 </div>
             </div>
-
             <div class="form-group" id="passwordGroup">
                 <label class="form-label" for="signupPassword">Password</label>
                 <div class="input-wrap">
                     <i class="input-icon fa fa-lock"></i>
-                    <input type="password" id="signupPassword" class="form-control" placeholder="Create a strong password" required autocomplete="new-password">
+                    <input type="password" name="password" id="signupPassword" class="form-control" placeholder="Create a strong password" required autocomplete="new-password">
                     <button type="button" class="toggle-pw" id="togglePwSignup" aria-label="Toggle password visibility">
                         <i class="fa fa-eye" id="togglePwIconSignup"></i>
                     </button>
@@ -278,39 +296,38 @@
                 </div>
                 <div class="form-help-text" id="passwordHelp"></div>
             </div>
-
             <div class="form-group" id="confirmPasswordGroup">
                 <label class="form-label" for="confirmPassword">Confirm Password</label>
                 <div class="input-wrap">
                     <i class="input-icon fa fa-lock"></i>
-                    <input type="password" id="confirmPassword" class="form-control" placeholder="Repeat your password" required autocomplete="new-password">
+                    <input type="password" name="confirmPassword" id="confirmPassword" class="form-control" placeholder="Repeat your password" required autocomplete="new-password">
                 </div>
                 <div class="form-help-text" id="confirmPasswordHelp"></div>
             </div>
-
             <div class="terms-group">
                 <input type="checkbox" id="agreeTerms" required>
                 <label class="terms-text" for="agreeTerms">
                     I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a> of Sharon Store.
                 </label>
             </div>
-
             <button type="submit" class="btn-primary" id="signupBtn">
                 <span class="btn-text">Create Account</span>
                 <span class="spinner"></span>
             </button>
         </form>
-
         <div class="divider"><span>Already have an account?</span></div>
         <div class="auth-footer"><a href="login.php">← Back to Sign In</a></div>
     </div>
 
+    <!-- Redirect script if PHP successfully created account -->
+    <?php if(!empty($success_message)): ?>
     <script>
-        function getAccounts() {
-            const stored = localStorage.getItem('sharonstore_accounts');
-            return stored ? JSON.parse(stored) : [];
-        }
+        document.body.style.opacity = '0.9';
+        setTimeout(() => { window.location.href = 'login.php'; }, 1500);
+    </script>
+    <?php endif; ?>
 
+    <script>
         // Get form elements
         const firstNameInput = document.getElementById('firstName');
         const lastNameInput = document.getElementById('lastName');
@@ -382,12 +399,6 @@
                 usernameHelp.textContent = 'Username must be at least 3 characters';
                 return false;
             }
-            const accounts = getAccounts();
-            if (accounts.find(a => a.username === value)) {
-                usernameGroup.classList.add('has-error');
-                usernameHelp.textContent = 'Username is already taken';
-                return false;
-            }
             usernameGroup.classList.remove('has-error');
             usernameHelp.textContent = '';
             return true;
@@ -427,14 +438,11 @@
                 passwordHelp.textContent = '';
                 return;
             }
-
             const strength = calculatePasswordStrength(pwd);
             document.getElementById('passwordStrength').style.display = 'flex';
-
             const fills = ['strengthFill1', 'strengthFill2', 'strengthFill3', 'strengthFill4'];
             const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e'];
             const labels = ['Weak', 'Fair', 'Good', 'Strong'];
-
             fills.forEach((id, idx) => {
                 const fill = document.getElementById(id);
                 if (idx < strength) {
@@ -444,9 +452,7 @@
                     fill.style.width = '0%';
                 }
             });
-
             document.getElementById('strengthLabel').textContent = labels[strength - 1] || '';
-
             if (pwd.length < 6) {
                 passwordHelp.textContent = 'Minimum 6 characters required';
                 passwordGroup.classList.add('has-error');
@@ -481,37 +487,31 @@
             firstNameGroup.classList.remove('has-error');
             firstNameHelp.textContent = '';
         });
-
         lastNameInput.addEventListener('blur', validateLastName);
         lastNameInput.addEventListener('focus', () => {
             lastNameGroup.classList.remove('has-error');
             lastNameHelp.textContent = '';
         });
-
         usernameInput.addEventListener('blur', validateUsername);
         usernameInput.addEventListener('focus', () => {
             usernameGroup.classList.remove('has-error');
             usernameHelp.textContent = '';
         });
-
         emailInput.addEventListener('blur', validateEmail);
         emailInput.addEventListener('focus', () => {
             emailGroup.classList.remove('has-error');
             emailHelp.textContent = '';
         });
-
         passwordInput.addEventListener('input', function() {
             updatePasswordStrength(this.value);
             if (confirmPasswordInput.value) validateConfirmPassword();
         });
-
         passwordInput.addEventListener('blur', function() {
             if (!this.value) {
                 passwordGroup.classList.add('has-error');
                 passwordHelp.textContent = 'Password is required';
             }
         });
-
         confirmPasswordInput.addEventListener('input', validateConfirmPassword);
         confirmPasswordInput.addEventListener('blur', validateConfirmPassword);
 
@@ -530,53 +530,31 @@
             }
         });
 
-        // Form submit
+        // Form submit integration: Allows native POST if validation passes
         document.getElementById('signupForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const btn = document.getElementById('signupBtn');
-            const errorEl = document.getElementById('errorAlert');
-            const errorMsg = document.getElementById('errorMsg');
-
+            
             // Validate all fields
             if (!validateFirstName() | !validateLastName() | !validateUsername() | !validateEmail() | !validateConfirmPassword()) {
+                e.preventDefault();
                 return;
             }
 
             const password = passwordInput.value;
             if (password.length < 6) {
                 showError('Password must be at least 6 characters.');
+                e.preventDefault();
                 return;
             }
 
             if (!agreeTermsCheckbox.checked) {
                 showError('Please agree to the Terms of Service.');
+                e.preventDefault();
                 return;
             }
 
+            // If JS validation passes, add loading state and allow the form to POST naturally to the PHP backend
+            const btn = document.getElementById('signupBtn');
             btn.classList.add('loading');
-            btn.disabled = true;
-
-            setTimeout(() => {
-                const firstName = firstNameInput.value.trim();
-                const lastName = lastNameInput.value.trim();
-                const username = usernameInput.value.trim();
-                const email = emailInput.value.trim();
-                const role = roleSelect.value;
-
-                // Save new account
-                const accounts = getAccounts();
-                accounts.push({ username, password, role, fullName: `${firstName} ${lastName}`, email });
-                localStorage.setItem('sharonstore_accounts', JSON.stringify(accounts));
-
-                btn.classList.remove('loading');
-                btn.disabled = false;
-                errorEl.classList.remove('show');
-                document.getElementById('successAlert').classList.add('show');
-
-                // Smooth fade to login
-                document.body.style.opacity = '0.9';
-                setTimeout(() => { window.location.href = 'login.php'; }, 1500);
-            }, 1200);
         });
 
         function showError(msg) {
@@ -584,12 +562,6 @@
             document.getElementById('errorMsg').textContent = msg;
             el.classList.add('show');
             setTimeout(() => el.classList.remove('show'), 4000);
-        }
-
-        // Redirect if already logged in
-        const session = localStorage.getItem('sharonstore_session');
-        if (session && JSON.parse(session).loggedIn) { 
-            window.location.href = 'dashboard.php'; 
         }
     </script>
 </body>

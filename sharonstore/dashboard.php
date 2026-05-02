@@ -1,17 +1,33 @@
+<?php
+session_start();
+require 'db_connect.php';
+
+// Security check
+if (!isset($_SESSION['UserID'])) {
+    header("Location: login.php");
+    exit();
+}
+
+// Fetch Inventory Data for JavaScript integration
+$inv_stmt = $pdo->query("SELECT ProductID as id, Item_Name as name, Category as category, Selling_Price as price, Stock_Quantity as stock, 'Pieces' as unit FROM tbl_inventory");
+$inventory_data = $inv_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Fetch Transactions Data for JavaScript integration
+$tx_stmt = $pdo->query("SELECT TransactionID as id, Transaction_Date as date, Total_Amount as total FROM tbl_transactions ORDER BY Transaction_Date DESC");
+$tx_data = $tx_stmt->fetchAll(PDO::FETCH_ASSOC);
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5, user-scalable=yes">
     <title>Dashboard – Sharon Store</title>
-    <meta name="description" content="Sharon Store management dashboard – overview of sales, inventory, and key metrics.">
     <meta name="theme-color" content="#198754">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="app.css">
 </head>
 <body>
-    <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-logo">
             <div class="logo-icon-sm">🛒</div>
@@ -33,10 +49,10 @@
         </nav>
         <div class="sidebar-footer">
             <div class="user-pill">
-                <div class="user-avatar" id="sidebarAvatar">A</div>
+                <div class="user-avatar" id="sidebarAvatar"><?php echo strtoupper(substr($_SESSION['Username'], 0, 1)); ?></div>
                 <div class="user-info">
-                    <div class="user-name" id="sidebarName">Admin</div>
-                    <div class="user-role" id="sidebarRole">Administrator</div>
+                    <div class="user-name" id="sidebarName"><?php echo htmlspecialchars($_SESSION['Username']); ?></div>
+                    <div class="user-role" id="sidebarRole"><?php echo htmlspecialchars($_SESSION['Role']); ?></div>
                 </div>
             </div>
             <button class="logout-btn" id="logoutBtn" title="Sign Out">
@@ -44,8 +60,6 @@
             </button>
         </div>
     </aside>
-
-    <!-- Main content -->
     <main class="main-content">
         <header class="topbar">
             <button class="menu-toggle" id="menuToggle"><i class="fa fa-bars"></i></button>
@@ -54,14 +68,11 @@
                 <span class="topbar-date" id="topbarDate"></span>
             </div>
         </header>
-
         <div class="page-body">
             <div class="page-hero">
-                <h1>Welcome back, <span id="heroName">Admin</span> 👋</h1>
+                <h1>Welcome back, <span id="heroName"><?php echo htmlspecialchars($_SESSION['Username']); ?></span> 👋</h1>
                 <p>Here's what's happening with your store today.</p>
             </div>
-
-            <!-- Stats cards -->
             <div class="stats-grid">
                 <div class="stat-card" style="--accent:#e91e8c">
                     <div class="stat-icon"><i class="fa fa-peso-sign"></i></div>
@@ -92,8 +103,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Two column -->
             <div class="dash-grid">
                 <div class="dash-card">
                     <div class="dash-card-header">
@@ -115,19 +124,21 @@
             </div>
         </div>
     </main>
-
     <script src="app.js"></script>
     <script>
-        checkAuth();
+        // Override localStorage with live database arrays
+        const dbInventory = <?php echo json_encode($inventory_data, JSON_NUMERIC_CHECK); ?>;
+        const dbTransactions = <?php echo json_encode($tx_data, JSON_NUMERIC_CHECK); ?>;
+        window.getInventory = function() { return dbInventory; };
+        window.getTransactions = function() { return dbTransactions; };
+
         initNav('nav-dashboard');
 
-        // Render dashboard stats
+        // Render dashboard stats seamlessly using existing logic
         const inventory = getInventory();
         document.getElementById('statProducts').textContent = inventory.length;
-
         const lowStock = inventory.filter(i => i.stock <= 20);
         document.getElementById('statLowStock').textContent = lowStock.length;
-
         const transactions = getTransactions();
         const todayStr = new Date().toDateString();
         const todayTx = transactions.filter(t => new Date(t.date).toDateString() === todayStr);
@@ -135,12 +146,7 @@
         const todayRevenue = todayTx.reduce((sum, t) => sum + t.total, 0);
         document.getElementById('statRevenue').textContent = '₱' + todayRevenue.toFixed(2);
 
-        // Hero name
-        const session = JSON.parse(localStorage.getItem('sharonstore_session') || '{}');
-        const heroName = (session.fullName || session.username || 'Admin').split(' ')[0];
-        document.getElementById('heroName').textContent = heroName;
-
-        // Low stock list
+        // Low stock list rendering
         const lowStockEl = document.getElementById('lowStockList');
         if (lowStock.length === 0) {
             lowStockEl.innerHTML = '<div class="empty-state"><i class="fa fa-circle-check fa-2x" style="color:#22c55e;margin-bottom:8px;"></i><p>All items are well stocked!</p></div>';
@@ -156,10 +162,10 @@
             `).join('');
         }
 
-        // Recent transactions
+        // Recent transactions rendering
         const recentEl = document.getElementById('recentTransactions');
         if (todayTx.length > 0) {
-            recentEl.innerHTML = todayTx.slice(-5).reverse().map(t => `
+            recentEl.innerHTML = todayTx.slice(0, 5).map(t => `
                 <div class="tx-row">
                     <div>
                         <div class="tx-id">TX #${t.id}</div>
@@ -172,36 +178,9 @@
 
         document.getElementById('topbarDate').textContent = new Date().toLocaleDateString('en-PH', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 
-        // Close sidebar when navigating on mobile
-        document.querySelectorAll('.nav-item').forEach(link => {
-            link.addEventListener('click', () => {
-                const sidebar = document.getElementById('sidebar');
-                if (window.innerWidth < 768) {
-                    sidebar.classList.remove('open');
-                }
-            });
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            window.location.href = 'logout.php';
         });
-
-        // Prevent body scroll when sidebar is open on mobile
-        const sidebar = document.getElementById('sidebar');
-        const observeSidebar = new MutationObserver(() => {
-            if (sidebar.classList.contains('open')) {
-                document.body.style.overflow = 'hidden';
-            } else {
-                document.body.style.overflow = '';
-            }
-        });
-        observeSidebar.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
-
-        // Improve touch responsiveness
-        document.addEventListener('touchstart', (e) => {
-            if (window.innerWidth < 768 && !sidebar.contains(e.target)) {
-                const menuToggle = document.getElementById('menuToggle');
-                if (!menuToggle.contains(e.target)) {
-                    sidebar.classList.remove('open');
-                }
-            }
-        }, false);
     </script>
 </body>
 </html>

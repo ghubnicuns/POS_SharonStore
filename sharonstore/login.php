@@ -1,3 +1,46 @@
+<?php
+session_start();
+require 'db_connect.php'; // Ensure this file exists in the same folder
+
+// If they are already logged in, send them straight to the dashboard
+if (isset($_SESSION['UserID'])) {
+    header("Location: dashboard.php");
+    exit();
+}
+
+$error_message = '';
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $username = trim($_POST['username']);
+    $password = $_POST['password'];
+
+    if (empty($username) || empty($password)) {
+        $error_message = 'Username and password are required.';
+    } else {
+        // Query the database from your ERD structure
+        $stmt = $pdo->prepare("SELECT * FROM tbl_users WHERE Username = ?");
+        $stmt->execute([$username]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Verify user exists and password matches
+        if ($user && password_verify($password, $user['Password'])) {
+            // Success! Set session variables
+            $_SESSION['UserID'] = $user['UserID'];
+            $_SESSION['Username'] = $user['Username'];
+            $_SESSION['Role'] = $user['Role'];
+
+            // Log the login action to the audit trail
+            $log_stmt = $pdo->prepare("INSERT INTO tbl_audit_logs (UserID, Action_Performed) VALUES (?, 'User logged in')");
+            $log_stmt->execute([$user['UserID']]);
+
+            header("Location: dashboard.php");
+            exit();
+        } else {
+            $error_message = 'Invalid username or password.';
+        }
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -210,7 +253,7 @@
         /* Alert */
         .alert-error {
             background: rgba(220,38,38,0.15); border: 1px solid rgba(220,38,38,0.35);
-            border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #fca5a5;
+            border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #dc2626;
             margin-bottom: 18px; display: none; align-items: center; gap: 8px;
             animation: slideDown 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
@@ -236,14 +279,7 @@
         .btn-primary:active:not(.loading) {
             animation: shake 0.3s ease-in-out;
         }
-
-        /* Global animations */
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0.9; }
-        }
         
-        /* Improved focus visible state for accessibility */
         .form-control:focus-visible {
             outline: 2px solid var(--pink);
             outline-offset: 2px;
@@ -264,17 +300,20 @@
         <h1 class="auth-heading">Welcome back 👋</h1>
         <p class="auth-sub">Sign in to your store management account</p>
 
-        <div class="alert-error" id="loginError">
+        <!-- PHP Error Output via CSS class -->
+        <div class="alert-error <?php echo !empty($error_message) ? 'show' : ''; ?>" id="loginError">
             <i class="fa fa-circle-exclamation"></i>
-            <span id="loginErrorMsg">Invalid username or password.</span>
+            <span id="loginErrorMsg"><?php echo htmlspecialchars($error_message); ?></span>
         </div>
 
-        <form id="loginForm" novalidate>
+        <!-- Form updated to POST to PHP -->
+        <form id="loginForm" method="POST" action="">
             <div class="form-group" id="usernameGroup">
                 <label class="form-label" for="loginUsername">Username</label>
                 <div class="input-wrap">
                     <i class="input-icon fa fa-user"></i>
-                    <input type="text" id="loginUsername" class="form-control" placeholder="Enter your username" autocomplete="username" required>
+                    <!-- Added name="username" -->
+                    <input type="text" name="username" id="loginUsername" class="form-control" placeholder="Enter your username" autocomplete="username" required>
                 </div>
                 <div class="form-help-text" id="usernameHelp"></div>
             </div>
@@ -283,7 +322,8 @@
                 <label class="form-label" for="loginPassword">Password</label>
                 <div class="input-wrap">
                     <i class="input-icon fa fa-lock"></i>
-                    <input type="password" id="loginPassword" class="form-control" placeholder="Enter your password" autocomplete="current-password" required>
+                    <!-- Added name="password" -->
+                    <input type="password" name="password" id="loginPassword" class="form-control" placeholder="Enter your password" autocomplete="current-password" required>
                     <button type="button" class="toggle-pw" id="togglePw" aria-label="Toggle password visibility">
                         <i class="fa fa-eye" id="togglePwIcon"></i>
                     </button>
@@ -302,7 +342,7 @@
 
             <div class="options-row">
                 <label class="checkbox-label">
-                    <input type="checkbox" id="rememberMe"> Remember me
+                    <input type="checkbox" id="rememberMe" name="rememberMe"> Remember me
                 </label>
                 <a href="#" class="forgot-link">Forgot password?</a>
             </div>
@@ -321,64 +361,10 @@
     </div>
 
     <script>
-        // --- Demo accounts (stored in localStorage via signup) ---
-        const DEFAULT_ACCOUNTS = [
-            { username: 'admin', password: 'admin123', role: 'Admin', fullName: 'Sharon Admin' }
-        ];
-
-        function getAccounts() {
-            const stored = localStorage.getItem('sharonstore_accounts');
-            const accounts = stored ? JSON.parse(stored) : [];
-            // Merge defaults (avoid duplicates)
-            DEFAULT_ACCOUNTS.forEach(def => {
-                if (!accounts.find(a => a.username === def.username)) accounts.unshift(def);
-            });
-            return accounts;
-        }
-
-        // === Real-time validation ===
-        const usernameInput = document.getElementById('loginUsername');
+        // === UI Interactions ===
         const passwordInput = document.getElementById('loginPassword');
-        const usernameGroup = document.getElementById('usernameGroup');
         const passwordGroup = document.getElementById('passwordGroup');
-        const usernameHelp = document.getElementById('usernameHelp');
         const passwordHelp = document.getElementById('passwordHelp');
-        const accounts = getAccounts();
-
-        // Username validation
-        usernameInput.addEventListener('blur', function() {
-            const value = this.value.trim();
-            if (!value) {
-                usernameGroup.classList.remove('has-success');
-                usernameGroup.classList.add('has-error');
-                usernameHelp.textContent = 'Username is required';
-            } else if (value.length < 3) {
-                usernameGroup.classList.remove('has-success');
-                usernameGroup.classList.add('has-error');
-                usernameHelp.textContent = 'Username must be at least 3 characters';
-            } else {
-                const userExists = accounts.some(a => a.username === value);
-                if (userExists) {
-                    usernameGroup.classList.add('has-success');
-                    usernameGroup.classList.remove('has-error');
-                    usernameHelp.textContent = '';
-                } else {
-                    usernameGroup.classList.remove('has-success');
-                    usernameGroup.classList.remove('has-error');
-                    usernameHelp.textContent = '';
-                }
-            }
-        });
-
-        usernameInput.addEventListener('focus', function() {
-            usernameGroup.classList.remove('has-error', 'has-success');
-            usernameHelp.textContent = '';
-        });
-
-        usernameInput.addEventListener('input', function() {
-            usernameGroup.classList.remove('has-error', 'has-success');
-            usernameHelp.textContent = '';
-        });
 
         // Password strength indicator
         function calculatePasswordStrength(pwd) {
@@ -416,14 +402,6 @@
             });
 
             document.getElementById('strengthLabel').textContent = labels[strength - 1] || '';
-
-            if (pwd.length < 6) {
-                passwordHelp.textContent = 'Minimum 6 characters required';
-                passwordGroup.classList.add('has-error');
-            } else {
-                passwordGroup.classList.remove('has-error');
-                passwordHelp.textContent = '';
-            }
         }
 
         passwordInput.addEventListener('input', function() {
@@ -432,20 +410,6 @@
 
         passwordInput.addEventListener('focus', function() {
             if (this.value) updatePasswordStrength(this.value);
-        });
-
-        passwordInput.addEventListener('blur', function() {
-            if (!this.value) {
-                passwordGroup.classList.add('has-error');
-                passwordHelp.textContent = 'Password is required';
-            }
-        });
-
-        // Submit on Enter key in password field
-        passwordInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                document.getElementById('loginForm').dispatchEvent(new Event('submit'));
-            }
         });
 
         // Toggle password visibility
@@ -463,85 +427,13 @@
             }
         });
 
-        // Checkbox interactions
-        const rememberMeCheckbox = document.getElementById('rememberMe');
-        rememberMeCheckbox.addEventListener('change', function() {
-            if (this.checked) {
-                localStorage.setItem('sharonstore_remember', 'true');
-            } else {
-                localStorage.removeItem('sharonstore_remember');
-            }
-        });
-
-        // Restore "Remember me" state
-        if (localStorage.getItem('sharonstore_remember')) {
-            rememberMeCheckbox.checked = true;
-        }
-
-        // Login submit
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Clear previous errors
-            document.getElementById('loginError').classList.remove('show');
-            
-            // Validate fields
-            const username = usernameInput.value.trim();
-            const password = passwordInput.value;
-
-            if (!username) {
-                usernameGroup.classList.add('has-error');
-                usernameHelp.textContent = 'Username is required';
-                usernameInput.focus();
-                return;
-            }
-            if (!password) {
-                passwordGroup.classList.add('has-error');
-                passwordHelp.textContent = 'Password is required';
-                passwordInput.focus();
-                return;
-            }
-
+        // Add loading state to button when form is submitted natively
+        document.getElementById('loginForm').addEventListener('submit', function() {
             const btn = document.getElementById('loginBtn');
-            btn.classList.add('loading');
-            btn.disabled = true;
-
-            setTimeout(() => {
-                const match = accounts.find(a => a.username === username && a.password === password);
-
-                if (match) {
-                    // Save session to localStorage
-                    localStorage.setItem('sharonstore_session', JSON.stringify({
-                        loggedIn: true,
-                        username: match.username,
-                        fullName: match.fullName,
-                        role: match.role
-                    }));
-                    // Smooth transition to dashboard
-                    document.body.style.opacity = '0.9';
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.php';
-                    }, 200);
-                } else {
-                    btn.classList.remove('loading');
-                    btn.disabled = false;
-                    const err = document.getElementById('loginError');
-                    err.classList.add('show');
-                    document.getElementById('loginErrorMsg').textContent = 'Invalid username or password. Try admin / admin123';
-                    
-                    // Focus back to username
-                    usernameInput.focus();
-                    
-                    setTimeout(() => err.classList.remove('show'), 4000);
-                }
-            }, 900);
+            if(document.getElementById('loginUsername').value && document.getElementById('loginPassword').value) {
+                btn.classList.add('loading');
+            }
         });
-
-        // Check if already logged in
-        const session = localStorage.getItem('sharonstore_session');
-        if (session && JSON.parse(session).loggedIn) {
-            window.location.href = 'dashboard.php';
-        }
     </script>
 </body>
 </html>
