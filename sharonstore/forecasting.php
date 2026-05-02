@@ -6,39 +6,8 @@
     <title>Forecasting & Restocking – Sharon Store</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="app.css">
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <style>
-        .tabs { display:flex; gap:4px; background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:4px; margin-bottom:22px; width:fit-content; }
-        .tab-btn { padding:9px 20px; border:none; border-radius:9px; background:transparent; color:var(--muted); font-size:13px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; transition:all .2s; }
-        .tab-btn.active { background:linear-gradient(135deg,var(--pink),var(--purple)); color:#fff; box-shadow:0 4px 12px rgba(233,30,140,.3); }
-        .tab-panel { display:none; } .tab-panel.active { display:block; }
-
-        .fc-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:20px; }
-        .chart-card canvas { max-height:280px; }
-
-        .restock-card { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:18px; transition:transform .2s,box-shadow .2s; }
-        .restock-card:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.3); }
-        .rc-head { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:14px; }
-        .rc-name { font-size:14px; font-weight:700; color:var(--text); }
-        .rc-cat  { font-size:11px; color:var(--muted); margin-top:2px; }
-        .bar-wrap { margin-bottom:12px; }
-        .bar-labels { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-bottom:5px; }
-        .bar-track { height:7px; background:rgba(255,255,255,.08); border-radius:10px; overflow:hidden; }
-        .bar-fill  { height:100%; border-radius:10px; transition:width .5s; }
-        .rc-foot { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
-        .rc-meta { font-size:12px; color:var(--muted); }
-        .rc-meta strong { color:var(--warning); }
-        .restock-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
-
-        .trend-up   { color:var(--success); } .trend-down { color:var(--danger); }
-        .forecast-table td:first-child { font-weight:600; color:var(--text); }
-
-        .insight-box { background:rgba(233,30,140,.07); border:1px solid rgba(233,30,140,.2); border-radius:12px; padding:16px 20px; margin-bottom:20px; font-size:13px; color:var(--text2); line-height:1.6; }
-        .insight-box strong { color:var(--pink-light); }
-
-        @media(max-width:768px){ .fc-grid{grid-template-columns:1fr;} }
-    </style>
 </head>
 <body>
 <aside class="sidebar" id="sidebar">
@@ -52,16 +21,18 @@
         <a href="inventory.php" class="nav-item" id="nav-inventory"><i class="fa fa-boxes-stacked"></i><span>Inventory</span></a>
         <a href="forecasting.php" class="nav-item" id="nav-forecasting"><i class="fa fa-chart-line"></i><span>Forecasting & Restock</span></a>
     </nav>
-    <div class="sidebar-footer">
-        <div class="user-pill">
-            <div class="user-avatar" id="sidebarAvatar">A</div>
-            <div class="user-info">
-                <div class="user-name" id="sidebarName">Admin</div>
-                <div class="user-role" id="sidebarRole">Administrator</div>
+        <div class="sidebar-footer">
+            <div class="user-pill">
+                <div class="user-avatar" id="sidebarAvatar">A</div>
+                <div class="user-info">
+                    <div class="user-name" id="sidebarName">Admin</div>
+                    <div class="user-role" id="sidebarRole">Administrator</div>
+                </div>
             </div>
+            <button class="logout-btn" id="logoutBtn" title="Sign Out">
+                <i class="fa fa-right-from-bracket"></i>
+            </button>
         </div>
-        <button class="logout-btn" id="logoutBtn" title="Sign Out"><i class="fa fa-right-from-bracket"></i></button>
-    </div>
 </aside>
 
 <main class="main-content">

@@ -7,51 +7,7 @@
     <meta name="description" content="Manage your Sharon Store product inventory – add, edit, and track stock levels.">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="app.css">
-    <style>
-        .stock-chip {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 4px 10px; border-radius: 20px;
-            font-size: 12px; font-weight: 600;
-        }
-        .stock-dot { width: 6px; height: 6px; border-radius: 50%; }
-        .stock-ok   { background: rgba(34,197,94,0.12); color: #22c55e; }
-        .stock-ok .stock-dot { background: #22c55e; }
-        .stock-low  { background: rgba(245,158,11,0.12); color: #f59e0b; }
-        .stock-low .stock-dot { background: #f59e0b; }
-        .stock-out  { background: rgba(239,68,68,0.12); color: #ef4444; }
-        .stock-out .stock-dot { background: #ef4444; }
-
-        .cat-badge {
-            padding: 3px 10px; border-radius: 20px;
-            font-size: 11px; font-weight: 600;
-            background: rgba(124,58,237,0.15); color: #a855f7;
-        }
-
-        .table-wrap { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); overflow: auto; }
-
-        .bulk-bar {
-            display: none;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 16px;
-            background: rgba(233,30,140,0.08);
-            border: 1px solid rgba(233,30,140,0.2);
-            border-radius: 10px;
-            margin-bottom: 14px;
-            font-size: 13px;
-            color: var(--pink-light);
-        }
-        .bulk-bar.visible { display: flex; }
-
-        .sort-th { cursor: pointer; user-select: none; }
-        .sort-th:hover { color: var(--text); }
-        .sort-th .sort-icon { margin-left: 4px; opacity: 0.4; }
-        .sort-th.asc .sort-icon, .sort-th.desc .sort-icon { opacity: 1; color: var(--pink-light); }
-
-        .no-results { text-align: center; padding: 48px; color: var(--muted); font-size: 14px; }
-        .import-export { display: flex; gap: 8px; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <!-- Sidebar -->
@@ -89,8 +45,8 @@
 
         <div class="page-body">
             <!-- Stats row -->
-            <div class="stats-grid" style="margin-bottom:20px;">
-                <div class="stat-card" style="--accent:#22c55e">
+            <div class="stats-grid">
+                <div class="stat-card accent-green">
                     <div class="stat-icon"><i class="fa fa-boxes-stacked"></i></div>
                     <div class="stat-info"><div class="stat-value" id="invTotal">0</div><div class="stat-label">Total Products</div></div>
                 </div>
@@ -98,7 +54,7 @@
                     <div class="stat-icon"><i class="fa fa-triangle-exclamation"></i></div>
                     <div class="stat-info"><div class="stat-value" id="invLow">0</div><div class="stat-label">Low Stock</div></div>
                 </div>
-                <div class="stat-card" style="--accent:#ef4444">
+                <div class="stat-card accent-red">
                     <div class="stat-icon"><i class="fa fa-ban"></i></div>
                     <div class="stat-info"><div class="stat-value" id="invOut">0</div><div class="stat-label">Out of Stock</div></div>
                 </div>
@@ -127,7 +83,7 @@
                     <option value="low">Low Stock</option>
                     <option value="out">Out of Stock</option>
                 </select>
-                <div style="margin-left:auto; display:flex; gap:8px;">
+                <div class="action-group">
                     <button class="btn btn-outline" id="exportBtn"><i class="fa fa-download"></i> Export CSV</button>
                     <button class="btn btn-pink" id="addProductBtn"><i class="fa fa-plus"></i> Add Product</button>
                 </div>
@@ -145,7 +101,7 @@
                 <table class="data-table" id="inventoryTable">
                     <thead>
                         <tr>
-                            <th style="width:40px;"><input type="checkbox" id="selectAll" style="accent-color:var(--pink);"></th>
+                            <th style="width:40px;"><input type="checkbox" id="selectAll" class="accent-checkbox"></th>
                             <th class="sort-th" data-col="name">Product Name <i class="fa fa-sort sort-icon"></i></th>
                             <th class="sort-th" data-col="category">Category <i class="fa fa-sort sort-icon"></i></th>
                             <th class="sort-th" data-col="price">Price <i class="fa fa-sort sort-icon"></i></th>
@@ -153,13 +109,13 @@
                             <th>Unit</th>
                             <th>Reorder Level</th>
                             <th>Status</th>
-                            <th style="text-align:center;">Actions</th>
+                            <th class="text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="inventoryBody"></tbody>
                 </table>
-                <div class="no-results" id="noResults" style="display:none;">
-                    <i class="fa fa-search fa-2x" style="margin-bottom:8px; display:block;"></i>
+                <div class="no-results hidden" id="noResults">
+                    <i class="fa fa-search fa-2x icon-block"></i>
                     No products match your search.
                 </div>
             </div>
@@ -215,7 +171,7 @@
                     </div>
                 </div>
                 <div class="mf-group">
-                    <label class="mf-label">Reorder Level <span style="color:var(--muted); font-weight:400;">(alert threshold)</span></label>
+                    <label class="mf-label">Reorder Level <span class="label-note">(alert threshold)</span></label>
                     <input type="number" class="mf-input" id="mfReorder" placeholder="20" min="0">
                 </div>
             </div>
@@ -228,16 +184,16 @@
 
     <!-- Delete Confirm Modal -->
     <div class="modal-overlay" id="deleteModal">
-        <div class="modal" style="max-width:380px;">
+        <div class="modal modal-small">
             <div class="modal-header">
                 <h3>Delete Product</h3>
                 <button class="modal-close" onclick="closeModal('deleteModal')"><i class="fa fa-xmark"></i></button>
             </div>
-            <div class="modal-body" style="text-align:center; padding:28px 24px;">
-                <div style="font-size:40px; margin-bottom:12px;">🗑️</div>
-                <p style="font-size:14px; color:var(--text2); margin-bottom:6px;">Are you sure you want to delete</p>
-                <p style="font-size:16px; font-weight:700; color:var(--text);" id="deleteProductName">"Product Name"</p>
-                <p style="font-size:12px; color:var(--muted); margin-top:8px;">This action cannot be undone.</p>
+            <div class="modal-body modal-body-center modal-body-extra">
+                <div class="modal-icon">🗑️</div>
+                <p class="modal-text">Are you sure you want to delete</p>
+                <p class="modal-strong" id="deleteProductName">"Product Name"</p>
+                <p class="modal-note">This action cannot be undone.</p>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeModal('deleteModal')">Cancel</button>
@@ -312,17 +268,17 @@
                 noResults.style.display = 'none';
                 tbody.innerHTML = page.map(item => `
                     <tr>
-                        <td><input type="checkbox" class="row-check" data-id="${item.id}" style="accent-color:var(--pink);"></td>
+                        <td><input type="checkbox" class="row-check accent-checkbox" data-id="${item.id}"></td>
                         <td class="td-name">${item.name}</td>
                         <td><span class="cat-badge">${item.category}</span></td>
-                        <td style="font-weight:700; color:var(--success);">₱${item.price.toFixed(2)}</td>
-                        <td style="font-weight:700;">${item.stock} <small style="color:var(--muted);">${item.unit}</small></td>
-                        <td style="color:var(--muted);">${item.unit}</td>
-                        <td style="color:var(--muted);">${item.reorderLevel || 20}</td>
+                        <td class="inventory-price">₱${item.price.toFixed(2)}</td>
+                        <td class="stock-quantity">${item.stock} <small class="small-muted">${item.unit}</small></td>
+                        <td class="text-muted">${item.unit}</td>
+                        <td class="text-muted">${item.reorderLevel || 20}</td>
                         <td>${stockChip(item)}</td>
-                        <td style="text-align:center;">
+                        <td class="text-center">
                             <button class="btn btn-outline btn-sm" onclick="editProduct(${item.id})"><i class="fa fa-pen"></i></button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteProduct(${item.id})" style="margin-left:4px;"><i class="fa fa-trash"></i></button>
+                            <button class="btn btn-danger btn-sm ml-sm" onclick="deleteProduct(${item.id})"><i class="fa fa-trash"></i></button>
                         </td>
                     </tr>
                 `).join('');

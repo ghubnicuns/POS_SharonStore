@@ -6,129 +6,7 @@
     <title>Point of Sale – Sharon Store</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="app.css">
-    <style>
-        .pos-layout { display:flex; gap:0; height:calc(100vh - var(--topbar-h)); overflow:hidden; }
-        .pos-left { flex:1; display:flex; flex-direction:column; padding:20px; overflow:hidden; }
-        .pos-right { width:360px; background:var(--surface); border-left:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; }
-
-        .cat-pills { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
-        .cat-pill { padding:7px 16px; border-radius:20px; border:1px solid var(--border); background:var(--surface2); color:var(--muted); font-size:12px; font-weight:600; cursor:pointer; transition:all .2s; font-family:'Inter',sans-serif; }
-        .cat-pill.active { background:linear-gradient(135deg,var(--pink),var(--purple)); color:#fff; border-color:transparent; box-shadow:0 4px 12px rgba(233,30,140,.3); }
-
-        .prod-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:4px; overflow-y:auto; flex:1; align-content:start; }
-        .prod-card {
-            background:var(--surface2);
-            border:1px solid var(--border);
-            border-radius:6px;
-            padding:8px 6px; cursor:pointer;
-            transition:background .15s,box-shadow .15s;
-            text-align:center;
-            aspect-ratio: 1 / 1;
-            display:flex; flex-direction:column; align-items:center; justify-content:center;
-            overflow:hidden;
-        }
-        .prod-card:hover { background:rgba(233,30,140,0.08); box-shadow:inset 0 0 0 2px rgba(233,30,140,.35); }
-        .prod-card.out { opacity:.5; cursor:not-allowed; }
-        .prod-emoji { font-size:22px; margin-bottom:6px; }
-        .prod-name { font-size:11px; font-weight:700; color:var(--text); margin-bottom:3px; line-height:1.3; }
-        .prod-price { font-size:13px; font-weight:800; color:var(--success); margin-bottom:4px; }
-        .prod-stock { font-size:10px; color:var(--muted); }
-
-        /* Right panel */
-        .cart-header { padding:16px 18px; border-bottom:1px solid var(--border); font-size:15px; font-weight:700; color:var(--text); display:flex; align-items:center; justify-content:space-between; }
-        .cart-clear { font-size:11px; color:var(--danger); cursor:pointer; border:none; background:none; font-family:'Inter',sans-serif; font-weight:600; }
-        .cart-items { flex:1; overflow-y:auto; padding:12px; }
-        .cart-empty { text-align:center; padding:40px 20px; color:var(--muted); font-size:13px; }
-        .cart-item { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:8px; }
-        .ci-name { font-size:13px; font-weight:700; color:var(--text); margin-bottom:4px; }
-        .ci-price { font-size:11px; color:var(--muted); }
-        .ci-controls { display:flex; align-items:center; justify-content:space-between; margin-top:8px; }
-        .ci-qty { display:flex; align-items:center; gap:6px; }
-        .qty-btn { width:26px; height:26px; border-radius:6px; border:1px solid var(--border); background:rgba(255,255,255,.06); color:var(--text); font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .2s; }
-        .qty-btn:hover { background:rgba(233,30,140,.2); border-color:rgba(233,30,140,.4); }
-        .qty-val { font-size:14px; font-weight:700; color:var(--text); min-width:20px; text-align:center; }
-        .ci-subtotal { font-size:13px; font-weight:800; color:var(--success); }
-        .ci-remove { background:none; border:none; color:var(--danger); cursor:pointer; font-size:13px; }
-
-        .cart-footer { padding:16px 18px; border-top:1px solid var(--border); }
-        .total-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
-        .total-label { font-size:14px; color:var(--muted); font-weight:600; }
-        .total-val { font-size:24px; font-weight:800; color:var(--pink-light); }
-        .checkout-btn { width:100%; padding:15px; background:linear-gradient(135deg,var(--pink),var(--purple)); border:none; border-radius:12px; color:#fff; font-size:16px; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif; box-shadow:0 6px 20px rgba(233,30,140,.35); transition:transform .15s,box-shadow .15s; }
-        .checkout-btn:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(233,30,140,.45); }
-        .checkout-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
-
-        /* Receipt modal */
-        .receipt { background:#fff; color:#222; border-radius:12px; padding:24px; font-family:'Courier New',monospace; font-size:12px; max-height:70vh; overflow-y:auto; }
-        .receipt-title { text-align:center; font-size:16px; font-weight:bold; margin-bottom:4px; }
-        .receipt-sub { text-align:center; font-size:11px; color:#666; margin-bottom:12px; }
-        .receipt-divider { border:none; border-top:1px dashed #ccc; margin:10px 0; }
-        .receipt-row { display:flex; justify-content:space-between; margin-bottom:4px; }
-        .receipt-total { display:flex; justify-content:space-between; font-weight:bold; font-size:14px; margin-top:6px; }
-
-        /* ── Stock alert banner ── */
-        .stock-alert-bar {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            background: rgba(15,7,21,.7);
-            border: 1px solid rgba(239,68,68,.28);
-            border-radius: 12px;
-            padding: 10px 14px;
-            margin-bottom: 14px;
-            font-size: 12px;
-            backdrop-filter: blur(8px);
-            animation: alertSlideIn .35s cubic-bezier(.34,1.56,.64,1) both;
-            position: relative;
-        }
-        .stock-alert-bar.hidden { display: none; }
-        @keyframes alertSlideIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:none; } }
-
-        .alert-icon-wrap {
-            width: 32px; height: 32px; border-radius: 9px; display:flex; align-items:center; justify-content:center;
-            background: rgba(239,68,68,.15); color:#ef4444; font-size:14px; flex-shrink:0; margin-top:1px;
-        }
-
-        .alert-body { flex:1; min-width:0; }
-        .alert-title { font-weight:700; color:var(--text); margin-bottom:6px; display:flex; align-items:center; gap:8px; }
-        .alert-title .a-count {
-            background:linear-gradient(135deg,#ef4444,#f97316);
-            color:#fff; font-size:10px; font-weight:700;
-            padding:1px 7px; border-radius:20px; letter-spacing:.3px;
-        }
-
-        .alert-chips { display:flex; flex-wrap:wrap; gap:6px; }
-        .alert-chip {
-            display:inline-flex; align-items:center; gap:5px;
-            padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600;
-            border:1px solid; white-space:nowrap; cursor:default;
-            transition: transform .15s;
-        }
-        .alert-chip:hover { transform:scale(1.05); }
-        .chip-out  { background:rgba(239,68,68,.12); color:#ef4444; border-color:rgba(239,68,68,.3); }
-        .chip-low  { background:rgba(245,158,11,.12); color:#f59e0b; border-color:rgba(245,158,11,.3); }
-        .chip-dot  { width:5px; height:5px; border-radius:50%; background:currentColor; flex-shrink:0; }
-
-        .alert-toggle {
-            background:none; border:none; color:var(--muted); cursor:pointer;
-            font-size:11px; font-weight:600; font-family:'Inter',sans-serif;
-            display:flex; align-items:center; gap:4px; flex-shrink:0;
-            padding:4px 8px; border-radius:7px; transition:background .2s, color .2s;
-            margin-top:1px;
-        }
-        .alert-toggle:hover { background:rgba(255,255,255,.08); color:var(--text); }
-        .alert-dismiss {
-            position:absolute; top:8px; right:8px;
-            background:none; border:none; color:var(--muted); cursor:pointer;
-            font-size:12px; padding:2px 5px; border-radius:5px; transition:color .2s;
-        }
-        .alert-dismiss:hover { color:var(--danger); }
-        .chips-wrap { overflow:hidden; transition: max-height .3s ease, opacity .3s; max-height:200px; opacity:1; }
-        .chips-wrap.collapsed { max-height:0; opacity:0; }
-
-        @media(max-width:768px){ .pos-right{ width:100%; position:fixed; bottom:0; left:0; right:0; max-height:50vh; z-index:50; } .pos-layout{ flex-direction:column; } }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <aside class="sidebar" id="sidebar">
@@ -154,12 +32,12 @@
     </div>
 </aside>
 
-<main class="main-content" style="overflow:hidden;">
+<main class="main-content overflow-hidden">
     <header class="topbar">
         <button class="menu-toggle" id="menuToggle"><i class="fa fa-bars"></i></button>
         <div class="topbar-title">Point of Sale</div>
         <div class="topbar-right">
-            <div class="search-wrap" style="max-width:220px;">
+            <div class="search-wrap compact">
                 <i class="fa fa-magnifying-glass"></i>
                 <input type="text" class="search-input" id="posSearch" placeholder="Search products…">
             </div>
@@ -192,11 +70,11 @@
 
         <div class="pos-right">
             <div class="cart-header">
-                <span><i class="fa fa-cart-shopping" style="color:var(--pink-light);margin-right:8px;"></i>Cart <span id="cartCount" style="background:var(--pink);color:#fff;font-size:10px;padding:1px 7px;border-radius:20px;margin-left:4px;">0</span></span>
+                <span><i class="fa fa-cart-shopping cart-icon"></i>Cart <span id="cartCount" class="badge-pill">0</span></span>
                 <button class="cart-clear" id="clearCartBtn">Clear All</button>
             </div>
             <div class="cart-items" id="cartItems">
-                <div class="cart-empty"><i class="fa fa-cart-shopping fa-2x" style="margin-bottom:10px;display:block;opacity:.3;"></i>Cart is empty<br><small>Tap a product to add</small></div>
+                <div class="cart-empty"><i class="fa fa-cart-shopping fa-2x icon-block icon-muted"></i>Cart is empty<br><small>Tap a product to add</small></div>
             </div>
             <div class="cart-footer">
                 <div class="total-row">
@@ -211,23 +89,23 @@
 
 <!-- Payment Modal -->
 <div class="modal-overlay" id="paymentModal">
-    <div class="modal" style="max-width:400px;">
+    <div class="modal modal-large">
         <div class="modal-header">
             <h3>💳 Process Payment</h3>
             <button class="modal-close" onclick="closeModal('paymentModal')"><i class="fa fa-xmark"></i></button>
         </div>
         <div class="modal-body">
-            <div style="text-align:center; margin-bottom:20px;">
-                <div style="font-size:13px;color:var(--muted);margin-bottom:4px;">Amount Due</div>
-                <div style="font-size:36px;font-weight:800;color:var(--pink-light);">₱<span id="modalTotal">0.00</span></div>
+            <div class="text-center mb-lg">
+                <div class="modal-small-label">Amount Due</div>
+                <div class="modal-total">₱<span id="modalTotal">0.00</span></div>
             </div>
             <div class="mf-group">
                 <label class="mf-label">Cash Tendered (₱)</label>
                 <input type="number" class="mf-input" id="cashInput" placeholder="0.00" min="0" step="0.01">
             </div>
-            <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:14px;margin-top:8px;">
-                <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:6px;"><span>Amount Due</span><span style="color:var(--text);">₱<span id="changeAmtDue">0.00</span></span></div>
-                <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;color:var(--success);"><span>Change</span><span>₱<span id="changeAmt">0.00</span></span></div>
+            <div class="info-card">
+                <div class="info-row"><span>Amount Due</span><span class="text-default">₱<span id="changeAmtDue">0.00</span></span></div>
+                <div class="info-row info-row-strong"><span>Change</span><span>₱<span id="changeAmt">0.00</span></span></div>
             </div>
         </div>
         <div class="modal-footer">
@@ -239,12 +117,12 @@
 
 <!-- Receipt Modal -->
 <div class="modal-overlay" id="receiptModal">
-    <div class="modal" style="max-width:380px;">
+    <div class="modal modal-small">
         <div class="modal-header">
             <h3>🧾 Receipt</h3>
             <button class="modal-close" onclick="closeModal('receiptModal');newTransaction()"><i class="fa fa-xmark"></i></button>
         </div>
-        <div class="modal-body" style="padding:16px;">
+        <div class="modal-body modal-body-compact">
             <div class="receipt" id="receiptContent"></div>
         </div>
         <div class="modal-footer">
@@ -293,16 +171,9 @@ function renderProducts() {
             <div class="prod-emoji">${EMOJIS[item.category]||'📦'}</div>
             <div class="prod-name">${item.name}</div>
             <div class="prod-price">₱${item.price.toFixed(2)}</div>
-            <div class="prod-stock">${out?'<span style="color:#ef4444;">Out of Stock</span>':item.stock+' '+item.unit+' left'}</div>
+            <div class="prod-stock">${out?'<span class="text-danger font-bold">Out of Stock</span>':item.stock+' '+item.unit+' left'}</div>
         </div>`;
-    }).join('') || '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">No products found.</div>';
-}
-
-document.getElementById('posSearch').addEventListener('input', renderProducts);
-
-window.addToCart = function(id) {
-    inventory = getInventory();
-    const prod = inventory.find(p=>p.id===id);
+    }).join('') || '<div class="empty-state span-full">No products found.</div>';
     if(!prod||prod.stock<=0) return;
     const existing = cart.find(c=>c.id===id);
     const curQty = existing?existing.qty:0;
@@ -320,7 +191,7 @@ function renderCart() {
     document.getElementById('checkoutBtn').disabled = cart.length===0;
 
     if(!cart.length){
-        el.innerHTML='<div class="cart-empty"><i class="fa fa-cart-shopping fa-2x" style="margin-bottom:10px;display:block;opacity:.3;"></i>Cart is empty<br><small>Tap a product to add</small></div>';
+        el.innerHTML='<div class="cart-empty"><i class="fa fa-cart-shopping fa-2x icon-block icon-muted"></i>Cart is empty<br><small>Tap a product to add</small></div>';
         return;
     }
     el.innerHTML = cart.map((c,i)=>`
@@ -395,9 +266,9 @@ document.getElementById('confirmPayBtn').addEventListener('click', ()=>{
         <hr class="receipt-divider">
         <div class="receipt-row"><span>Cash</span><span>₱${cash.toFixed(2)}</span></div>
         <div class="receipt-total"><span>TOTAL</span><span>₱${due.toFixed(2)}</span></div>
-        <div class="receipt-row" style="color:green;font-weight:bold;"><span>Change</span><span>₱${change.toFixed(2)}</span></div>
+        <div class="receipt-row receipt-row--total"><span>Change</span><span>₱${change.toFixed(2)}</span></div>
         <hr class="receipt-divider">
-        <div style="text-align:center;font-size:11px;color:#888;">Thank you for shopping at Sharon Store!<br>Please come again. 💕</div>`;
+        <div class="receipt-note">Thank you for shopping at Sharon Store!<br>Please come again. 💕</div>`;
 
     closeModal('paymentModal');
     openModal('receiptModal');
@@ -450,7 +321,7 @@ function renderStockAlerts() {
             `<span class="chip-dot"></span>${i.name}</span>`),
         ...lowItems.map(i =>
             `<span class="alert-chip chip-low" title="Low Stock – ${i.stock} ${i.unit} left">` +
-            `<span class="chip-dot"></span>${i.name} <em style="font-style:normal;opacity:.7;">(${i.stock})</em></span>`)
+            `<span class="chip-dot"></span>${i.name} <em class="chip-note">(${i.stock})</em></span>`)
     ].join('');
 }
 
